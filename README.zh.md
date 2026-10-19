@@ -78,12 +78,20 @@ powershell -ExecutionPolicy Bypass -File .\install.ps1
 
 ## 维护者：发布
 
-三个包按依赖顺序发布（host / client 先，bundle 后）：
+三个包按依赖顺序发布（host → client → bundle），一条命令搞定：
 
 ```bash
-npm publish packages/host
-npm publish packages/client
-npm publish packages/bundle
+node scripts/publish.mjs            # 依次发布
+node scripts/publish.mjs --dry-run  # 只打印不发布
+node scripts/publish.mjs --tag next # 跟上游一样的 rc dist-tag
+```
+
+脚本会先校验账号、拒绝有未提交改动的仓库、跳过 registry 上已存在的版本，所以中断后重跑即可续发。
+
+发布需要 **带 "Bypass 2FA" 的 Granular Token**——这个账号对 publish 动作强制 2FA，网页登录拿到的 token 不够用：
+
+```bash
+npm config set //registry.npmjs.org/:_authToken npm_xxx
 ```
 
 版本号跟随 DSH CLI（当前 `0.2.1-rc.2`）：客户端 bundle 的 release 身份校验会拿它和宿主版本比对，`engines.dsh` 也按它声明兼容范围。

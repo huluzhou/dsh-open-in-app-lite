@@ -81,12 +81,18 @@ It junction-links the three packages, writes the `link:` dependencies and append
 Publish in dependency order (host / client first, bundle last):
 
 ```bash
-npm publish packages/host
-npm publish packages/client
-npm publish packages/bundle
+node scripts/publish.mjs            # host -> client -> bundle
+node scripts/publish.mjs --dry-run  # show what would be published
+node scripts/publish.mjs --tag next # mirror the upstream rc dist-tag
 ```
 
-This account has 2FA enforced for publishing, so each `npm publish` needs either an OTP (`--otp=<code>`) or a granular access token with *bypass 2FA* enabled (`NODE_AUTH_TOKEN`). A token is the practical route for CI.
+The script preflights the account, refuses a dirty tree, and skips versions already on the registry, so a partial publish resumes by re-running it.
+
+Publishing needs a **granular access token with "Bypass 2FA" enabled** — this account enforces 2FA on the publish action, and the web-login token does not satisfy it:
+
+```bash
+npm config set //registry.npmjs.org/:_authToken npm_xxx
+```
 
 Versions track the DSH CLI (`0.2.1-rc.2` currently): the client bundle's release identity is compared against the host version, and `engines.dsh` declares the supported range.
 
