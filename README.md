@@ -86,6 +86,8 @@ npm publish packages/client
 npm publish packages/bundle
 ```
 
+This account has 2FA enforced for publishing, so each `npm publish` needs either an OTP (`--otp=<code>`) or a granular access token with *bypass 2FA* enabled (`NODE_AUTH_TOKEN`). A token is the practical route for CI.
+
 Versions track the DSH CLI (`0.2.1-rc.2` currently): the client bundle's release identity is compared against the host version, and `engines.dsh` declares the supported range.
 
 ## License
