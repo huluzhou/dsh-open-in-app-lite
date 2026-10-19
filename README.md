@@ -35,6 +35,8 @@ Upstream documents this as a known limitation: extending the list means extendin
 
 ## Install
 
+> **npm status**: the three packages are ready in the standard bundle shape, but publishing is blocked by npm's 2FA policy — npm retired new TOTP setups and keeps security keys only, while CLI publishing still demands a TOTP code (`EOTP`) that a security key cannot produce, and recovery codes are not accepted either. Reported to npm support. Until then use the **script install** below (link mode, identical behaviour).
+
 ### Standard: the plugin manager
 
 Install `dsh-open-in-app-lite` from the sidebar's plugin page; DSH applies the bundle patch itself — no YAML editing. CLI equivalent:

@@ -35,6 +35,8 @@ config:
 
 ## 安装
 
+> **npm 发布状态**：三个包已按标准 bundle 形式准备好，但当前账号被 npm 的 2FA 策略挡住——npm 已停用新的 TOTP 配置、只保留安全密钥，而 CLI 发布仍要求 TOTP 码（`EOTP`），安全密钥给不出；恢复码也不能顶替。已提交 npm support 等回复。在那之前请用下面的**脚本安装**（link 方式，功能完全一致）。
+
 ### 标准方式：插件管理器
 
 在侧边栏「插件」页安装 `dsh-open-in-app-lite`，DSH 会自己带上 bundle 的 patch 层，不需要手改任何 YAML。命令行等价：
