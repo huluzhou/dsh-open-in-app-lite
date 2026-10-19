@@ -2,7 +2,7 @@
 /**
  * Publish the three packages in dependency order.
  *
- *   node scripts/publish.mjs [--tag latest] [--dry-run]
+ *   node scripts/publish.mjs [--tag latest] [--dry-run] [--otp <code>]
  *
  * Requires an npm credential that may publish this account's packages: a
  * granular access token with "Bypass 2FA" enabled, or a fresh OTP through
@@ -25,6 +25,10 @@ const args = process.argv.slice(2);
 const dryRun = args.includes('--dry-run');
 const tagIndex = args.indexOf('--tag');
 const tag = tagIndex === -1 ? 'latest' : args[tagIndex + 1];
+// Accounts with 2FA enforced can pass a live code instead of holding a
+// bypass-2FA token; one code covers the whole run while it stays valid.
+const otpIndex = args.indexOf('--otp');
+const otp = otpIndex === -1 ? undefined : args[otpIndex + 1];
 
 function run(command, commandArgs, cwd) {
   return execFileSync(command, commandArgs, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
@@ -78,7 +82,9 @@ for (const name of ORDER) {
 
   console.log(`publish ${line}`);
   try {
-    execFileSync('npm', ['publish', '--access', 'public', '--tag', tag], {
+    const publishArgs = ['publish', '--access', 'public', '--tag', tag];
+    if (otp !== undefined) publishArgs.push('--otp', otp);
+    execFileSync('npm', publishArgs, {
       cwd: join(root, 'packages', name),
       stdio: 'inherit',
     });
