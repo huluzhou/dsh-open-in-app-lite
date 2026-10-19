@@ -1,5 +1,5 @@
 window.__ModuleLoader__.load({
-	id: "dsh-local-ui-open-in-app",
+	id: "dsh-open-in-app-lite-client",
 	factory: (require) => {
 		var module = { exports: {} };
 		var exports = module.exports;

@@ -1,5 +1,5 @@
 /**
- * Local "Open In" host plugin: a fixed four-application catalog
+ * Host half of dsh-open-in-app: a fixed four-application catalog
  * (Explorer · VS Code · Git Bash · VSCodium).
  *
  * Self-contained on purpose: only Node built-ins, so it resolves correctly
@@ -14,7 +14,7 @@ import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { isAbsolute, join } from 'node:path';
 
-export const name = 'local-open-in-app';
+export const name = 'open-in-app-fixed';
 export const inject = ['webServer', 'connection'];
 
 const APPS_PATH = '/open-in-app/apps';

@@ -1,0 +1,43 @@
+{
+  "name": "dsh-open-in-app-lite",
+  "description": "Profile bundle that narrows the DeepSeek Harness Open In menu to Explorer, VS Code, Git Bash and VSCodium",
+  "version": "0.2.1-rc.2",
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/huluzhou/dsh-open-in-app.git",
+    "directory": "packages/bundle"
+  },
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib/index.js",
+    "cordis.patch.yml"
+  ],
+  "engines": {
+    "dsh": ">=0.2.1-rc.2 <0.3.0"
+  },
+  "license": "MIT",
+  "keywords": [
+    "deepseek-harness",
+    "dsh",
+    "dsh-bundle",
+    "open-in-app"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "dependencies": {
+    "dsh-open-in-app-lite-client": "0.2.1-rc.2",
+    "dsh-open-in-app-lite-host": "0.2.1-rc.2"
+  }
+}

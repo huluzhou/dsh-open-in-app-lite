@@ -1,0 +1,18 @@
+# dsh-open-in-app — bundle layer.
+#
+# Replaces the upstream Open In pair with a fixed four-application catalog:
+# Explorer, VS Code, Git Bash and VSCodium. Applied after the profile's own
+# bundles (dsh-base, dsh-web-app), so the two upstream rows exist by then.
+
+- id: open-in-app
+  disabled: true
+
+- id: ui-open-in-app
+  disabled: true
+
+- insert:
+    - id: open-in-app-fixed
+      name: 'dsh-open-in-app-lite-host'
+
+    - id: ui-open-in-app-fixed
+      name: 'dsh-open-in-app-lite-client'

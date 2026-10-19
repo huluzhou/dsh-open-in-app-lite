@@ -1,8 +1,15 @@
 {
-  "name": "dsh-local-ui-open-in-app",
+  "name": "dsh-open-in-app-lite-client",
+  "description": "Browser half of dsh-open-in-app: the Session-header Open In split button limited to Explorer, VS Code, Git Bash and VSCodium",
   "version": "0.2.1-rc.2",
-  "private": true,
-  "description": "Open In split button limited to Explorer, VS Code, Git Bash and VSCodium",
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/huluzhou/dsh-open-in-app.git",
+    "directory": "packages/client"
+  },
   "type": "module",
   "main": "lib/index.js",
   "exports": {
@@ -14,7 +21,16 @@
     "lib/index.js",
     "lib/client.js"
   ],
+  "engines": {
+    "dsh": ">=0.2.1-rc.2 <0.3.0"
+  },
   "license": "MIT",
+  "keywords": [
+    "deepseek-harness",
+    "dsh",
+    "dsh-client",
+    "open-in-app"
+  ],
   "dsh": {
     "client": {
       "inject": [

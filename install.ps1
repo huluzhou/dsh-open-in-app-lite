@@ -1,15 +1,18 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-    Install dsh-open-in-app into a DeepSeek Harness profile.
+    Local (link) install of the dsh-open-in-app bundle into a profile.
 
 .DESCRIPTION
-    Junction-links the two plugin packages into the profile's node_modules,
-    declares them as `link:` dependencies, and patches cordis.patch.yml to
-    disable the upstream Open In pair and insert these instead.
+    The standard installation path is the plugin manager: once the packages are
+    published, install `dsh-open-in-app` and DSH applies the bundle patch by
+    itself. This script is the offline / desktop-profile fallback, which cannot
+    use `dsh plugin` because the desktop profile is reserved for Electron.
 
-    Safe to re-run: existing links are replaced and the patch block is only
-    appended once. Both edited files are backed up as *.bak-<timestamp>.
+    It links the bundle plus both halves into the profile's node_modules,
+    declares them as `link:` dependencies, and appends the bundle to
+    `dsh.profile.bundles`. The disable/insert rows live in the bundle's
+    cordis.patch.yml, so the profile's own patch file is never edited.
 
 .PARAMETER ProfileName
     Profile directory name under $DshHome\profiles. Default: desktop
@@ -18,7 +21,7 @@
     DeepSeek Harness user directory. Default: $env:USERPROFILE\.dsh
 
 .EXAMPLE
-    pwsh -File .\install.ps1
+    powershell -ExecutionPolicy Bypass -File .\install.ps1
 #>
 [CmdletBinding()]
 param(
@@ -35,9 +38,12 @@ if (-not (Test-Path -LiteralPath $profileDir)) {
     throw "profile not found: $profileDir"
 }
 
+# The bundle first, then the halves it depends on: linking all three locally
+# keeps the bundle's version-pinned dependencies resolvable without npm.
 $packages = @(
-    @{ Name = 'dsh-local-open-in-app';    Path = (Join-Path $root 'host') },
-    @{ Name = 'dsh-local-ui-open-in-app'; Path = (Join-Path $root 'client') }
+    @{ Name = 'dsh-open-in-app-lite';        Path = (Join-Path $root 'packages\bundle') },
+    @{ Name = 'dsh-open-in-app-lite-host';   Path = (Join-Path $root 'packages\host') },
+    @{ Name = 'dsh-open-in-app-lite-client'; Path = (Join-Path $root 'packages\client') }
 )
 foreach ($package in $packages) {
     if (-not (Test-Path -LiteralPath (Join-Path $package.Path 'package.json'))) {
@@ -72,10 +78,10 @@ foreach ($package in $packages) {
         Remove-Link -Path $link
     }
     New-Item -ItemType Junction -Path $link -Target $package.Path | Out-Null
-    Write-Host "    link  $($package.Name) -> $($package.Path)"
+    Write-Host "    link  $($package.Name)"
 }
 
-# ---------------------------------------------------------------- package.json
+# ------------------------------------------------- package.json: deps + bundles
 $packagePath = Join-Path $profileDir 'package.json'
 if (-not (Test-Path -LiteralPath $packagePath)) {
     throw "missing $packagePath"
@@ -83,6 +89,7 @@ if (-not (Test-Path -LiteralPath $packagePath)) {
 Copy-Item -LiteralPath $packagePath -Destination "$packagePath.bak-$stamp"
 
 $json = [System.IO.File]::ReadAllText($packagePath) | ConvertFrom-Json
+
 $dependencies = [ordered]@{}
 if ($null -ne $json.dependencies) {
     foreach ($property in $json.dependencies.PSObject.Properties) {
@@ -98,50 +105,35 @@ if ($null -eq $json.PSObject.Properties['dependencies']) {
 else {
     $json.dependencies = [pscustomobject]$dependencies
 }
-[System.IO.File]::WriteAllText($packagePath, ($json | ConvertTo-Json -Depth 20), $utf8)
-Write-Host "    deps  $($packagePath) (backup: .bak-$stamp)"
 
-# ---------------------------------------------------------------- cordis.patch
-$patchPath = Join-Path $profileDir 'cordis.patch.yml'
-if (-not (Test-Path -LiteralPath $patchPath)) {
-    throw "missing $patchPath"
+$bundles = @()
+if ($null -ne $json.dsh -and $null -ne $json.dsh.profile -and $null -ne $json.dsh.profile.bundles) {
+    $bundles = @($json.dsh.profile.bundles)
 }
-Copy-Item -LiteralPath $patchPath -Destination "$patchPath.bak-$stamp"
-
-$patch = [System.IO.File]::ReadAllText($patchPath)
-$block = (@(
-        '# ---- dsh-open-in-app: Open In limited to Explorer / VS Code / Git Bash / VSCodium ----'
-        '- id: open-in-app'
-        '  disabled: true'
-        '- id: ui-open-in-app'
-        '  disabled: true'
-        '- insert:'
-        '    - id: local-open-in-app'
-        "      name: 'dsh-local-open-in-app'"
-        '    - id: local-ui-open-in-app'
-        "      name: 'dsh-local-ui-open-in-app'"
-    ) -join "`n")
-
-# Content with comments and blank lines removed: a shipped template may be an
-# empty flow sequence (`[]`), which cannot be followed by block entries.
-$meaningful = (($patch -split "`n") | Where-Object { $_ -notmatch '^\s*#' -and $_.Trim() -ne '' }) -join ''
-
-if ($patch -match '(?m)^\s*-?\s*id:\s*local-open-in-app\s*$') {
-    Write-Host '    patch already present, left untouched'
+if ($bundles -notcontains 'dsh-open-in-app-lite') {
+    $bundles += 'dsh-open-in-app-lite'
 }
-elseif ($meaningful -eq '[]') {
-    $replaced = [regex]::Replace($patch, '(?m)^[ \t]*\[\][ \t]*$', { param($match) $block })
-    [System.IO.File]::WriteAllText($patchPath, $replaced, $utf8)
-    Write-Host "    patch $patchPath (replaced empty list; backup: .bak-$stamp)"
+if ($null -eq $json.PSObject.Properties['dsh']) {
+    $json | Add-Member -NotePropertyName dsh -NotePropertyValue ([pscustomobject]@{ profile = [pscustomobject]@{ bundles = $bundles } })
 }
 else {
-    [System.IO.File]::AppendAllText($patchPath, "`n" + $block + "`n", $utf8)
-    Write-Host "    patch $patchPath (backup: .bak-$stamp)"
+    if ($null -eq $json.dsh.PSObject.Properties['profile']) {
+        $json.dsh | Add-Member -NotePropertyName profile -NotePropertyValue ([pscustomobject]@{ bundles = $bundles })
+    }
+    else {
+        $json.dsh.profile | Add-Member -NotePropertyName bundles -NotePropertyValue $bundles -Force
+    }
 }
+
+[System.IO.File]::WriteAllText($packagePath, ($json | ConvertTo-Json -Depth 20), $utf8)
+Write-Host "    profile package.json updated (backup: .bak-$stamp)"
 
 Write-Host ''
 Write-Host '==> done'
 Write-Host ''
 Write-Host '    Fully quit DeepSeek Harness (including the tray icon) and relaunch it.'
-Write-Host '    Then the Open In menu lists Explorer, VS Code, Git Bash and VSCodium only.'
+Write-Host '    The Open In menu then lists Explorer, VS Code, Git Bash and VSCodium only.'
+Write-Host ''
+Write-Host '    Already installed by hand before? Remove the old manual patch block from'
+Write-Host '    cordis.patch.yml first, otherwise both layers insert the same rows.'
 Write-Host ''
